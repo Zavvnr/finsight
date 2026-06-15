@@ -221,6 +221,32 @@ def extract_sections(text: str) -> dict:
     return sections
 
 
+# field -> (taxonomy, XBRL concept, unit)
+CONCEPT_MAP = {
+    "total_revenue": ("us-gaap", "RevenueFromContractWithCustomerExcludingAssessedTax", "USD"),
+    "net_income":          ("us-gaap", "NetIncomeLoss", "USD"),
+    "total_assets":        ("us-gaap", "Assets", "USD"),
+    "total_liabilities":   ("us-gaap", "Liabilities", "USD"),
+    "shareholders_equity": ("us-gaap", "StockholdersEquity", "USD"),
+    "operating_cash_flow": ("us-gaap", "NetCashProvidedByUsedInOperatingActivities", "USD"),
+    "cash_and_equivalents": ("us-gaap", "CashAndCashEquivalentsAtCarryingValue", "USD"),
+}
+def latest_annual(facts, taxonomy, concept, unit):
+    """Most recent 10-K (full-year) value for one concept, with its period."""
+    try:
+        rows = facts["facts"][taxonomy][concept]["units"][unit]
+    except KeyError:
+        return None
+    
+    annual = [r for r in rows if r.get("form") == "10-K" and r.get("fp") == "FY"]
+    
+    if not annual:
+        return None
+    
+    best = max(annual, key=lambda r: r["end"])     # latest period end
+    return {"value": best["val"], "fy": best["fy"], "end": best["end"]}
+
+
 # ─── HELPERS ────────────────────────────────────────────────────────────────
 
 def _parse_number(raw: str) -> float | None:
