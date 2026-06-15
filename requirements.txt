@@ -1,0 +1,17 @@
+### ------------------------------------ ###
+### Backend dependencies
+### ------------------------------------ ###
+requests
+beautifulsoup4
+lxml
+FastAPI
+uvicorn
+
+### ------------------------------------ ###
+### Frontend dependencies
+### ------------------------------------ ###
+react
+react-dom
+react-scripts
+express
+cors
