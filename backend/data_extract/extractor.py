@@ -4,22 +4,22 @@ Main extraction pipeline.
 Orchestrates the SEC client and the extraction modules into a single
 ``run(ticker)`` call that turns a ticker symbol into structured JSON.
 
-Run directly:
-    python extractor.py AAPL 10-K
+Run from the repo root:
+    python -m backend.data_extract.extractor AAPL 10-K
 or import ``run`` from the FastAPI app (see app.py).
 """
 
 import json
 
-from sec_client import get_cik, get_filings, get_document_url, fetch_and_parse
-from sections import extract_sections
-from text_metrics import (
+from .sec_client import get_cik, get_filings, get_document_url, fetch_and_parse
+from .sections import extract_sections
+from .text_metrics import (
     extract_income_statement,
     extract_balance_sheet,
     extract_cash_flow,
     extract_qualitative,
 )
-from ratios import compute_ratios
+from .ratios import compute_ratios
 
 
 # ─── MAIN PIPELINE ──────────────────────────────────────────────────────────

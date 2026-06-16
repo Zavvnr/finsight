@@ -47,11 +47,17 @@ def get_fact(facts, field):
     first, then fall back to candidate names in any non-standard namespace. Note: a few breakdowns (product /
     segment revenue) are not reliably tagged anywhere.
     """
-    taxonomy, concept, unit = CONCEPT_MAP[field]
-    hit = latest_annual(facts, taxonomy, concept, unit)
-    if hit:
-        return hit
+    # Standard us-gaap concept first (only if this field is mapped there).
+    # Some fields (e.g. product_revenue) are extension-only and not in CONCEPT_MAP,
+    # so use .get() to avoid a KeyError and fall through to the extension search.
+    mapped = CONCEPT_MAP.get(field)
+    if mapped:
+        taxonomy, concept, unit = mapped
+        hit = latest_annual(facts, taxonomy, concept, unit)
+        if hit:
+            return hit
 
+    # Fall back to the company's own extension namespace(s).
     for tax, concepts in facts.get("facts", {}).items():
         if tax in ("us-gaap", "dei"):          # standard / metadata, already tried
             continue

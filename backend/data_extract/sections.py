@@ -8,7 +8,7 @@ raw document fetch.
 
 import re
 
-from sec_client import get_filings, get_document_url, fetch_and_parse
+from .sec_client import get_filings, get_document_url, fetch_and_parse
 
 
 def extract_sections(text: str) -> dict:

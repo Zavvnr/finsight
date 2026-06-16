@@ -8,6 +8,7 @@ FastAPI
 uvicorn
 pytest
 pytest-cov
+httpx
 
 ### ------------------------------------ ###
 ### Frontend dependencies

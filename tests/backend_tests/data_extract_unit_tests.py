@@ -12,28 +12,13 @@ Categories covered per module:
 All sec_client network calls are mocked, so the suite runs fully offline.
 """
 
-from backend.data_extract import (
-    sec_client, 
-    facts, 
-    sections, 
-    text_metrics, 
-    ratios, 
-    validation, 
-    extractor
-)
+import math
+
+import pytest
 from unittest.mock import patch
 
-import math
-import os
-import pytest
-import sys
-
-# Make the data_extract modules importable no matter where pytest is launched.
-DATA_EXTRACT = os.path.abspath(
-    os.path.join(os.path.dirname(__file__), "..", "..", "backend", "data_extract")
-)
-if DATA_EXTRACT not in sys.path:
-    sys.path.insert(0, DATA_EXTRACT)
+from backend.data_extract import (
+    sec_client, facts, sections, text_metrics, ratios, validation, extractor)
 
 
 class FakeResponse:
@@ -130,6 +115,13 @@ class TestFacts:
         f = {"facts": {"mycorp": {"CashAndCashEquivalents": {"units": {"USD": [
             {"form": "10-K", "fp": "FY", "val": 777, "fy": 2024, "end": "2024-09-28"}]}}}}}
         assert facts.get_fact(f, "cash_and_equivalents")["value"] == 777
+
+    def test_success_extension_only_field(self):
+        # product_revenue is in EXTENSION_OVERRIDES but NOT in CONCEPT_MAP; after the
+        # get_fact fix it resolves via the extension namespace instead of raising KeyError.
+        f = {"facts": {"aapl": {"RevenueFromProducts": {"units": {"USD": [
+            {"form": "10-K", "fp": "FY", "val": 294866, "fy": 2024, "end": "2024-09-28"}]}}}}}
+        assert facts.get_fact(f, "product_revenue")["value"] == 294866
 
     def test_failure_missing_concept_returns_none(self):
         assert facts.latest_annual({"facts": {}}, "us-gaap", "Nope", "USD") is None
@@ -258,18 +250,18 @@ class TestSecClientPure:
 
 # ----------------------------- sec_client (mocked network) --------------------
 class TestSecClientMocked:
-    @patch("sec_client.requests.get")
+    @patch("backend.data_extract.sec_client.requests.get")
     def test_success_get_cik(self, mock_get):
         mock_get.return_value = FakeResponse(json_data={"0": {"ticker": "AAPL", "cik_str": 320193}})
         assert sec_client.get_cik("aapl") == "0000320193"
 
-    @patch("sec_client.requests.get")
+    @patch("backend.data_extract.sec_client.requests.get")
     def test_failure_get_cik_not_found(self, mock_get):
         mock_get.return_value = FakeResponse(json_data={"0": {"ticker": "MSFT", "cik_str": 789019}})
         with pytest.raises(ValueError):
             sec_client.get_cik("AAPL")
 
-    @patch("sec_client.requests.get")
+    @patch("backend.data_extract.sec_client.requests.get")
     def test_success_get_filings_filters_form(self, mock_get):
         mock_get.return_value = FakeResponse(json_data={"filings": {"recent": {
             "form": ["10-Q", "10-K", "10-K"],
@@ -279,7 +271,7 @@ class TestSecClientMocked:
         out = sec_client.get_filings("0000320193", form_type="10-K", limit=5)
         assert [f["accession"] for f in out] == ["k1", "k2"]
 
-    @patch("sec_client.requests.get")
+    @patch("backend.data_extract.sec_client.requests.get")
     def test_failure_network_error_propagates(self, mock_get):
         import requests as _rq
         mock_get.side_effect = _rq.RequestException("boom")
@@ -291,7 +283,7 @@ class TestSecClientMocked:
 class TestApp:
     def _client(self, monkeypatch, run_impl):
         pytest.importorskip("httpx")  # TestClient needs httpx
-        import app as app_module
+        import backend.data_extract.app as app_module
         monkeypatch.setattr(app_module, "run", run_impl)
         from fastapi.testclient import TestClient
         return TestClient(app_module.app)
