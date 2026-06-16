@@ -6,6 +6,8 @@ beautifulsoup4
 lxml
 FastAPI
 uvicorn
+pytest
+pytest-cov
 
 ### ------------------------------------ ###
 ### Frontend dependencies
@@ -15,3 +17,7 @@ react-dom
 react-scripts
 express
 cors
+
+### ------------------------------------ ###
+### Frontend dependencies
+### ------------------------------------ ###
