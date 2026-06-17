@@ -2,7 +2,7 @@
 
 How the extraction backend works, what it outputs, how to test it, and what to edit when you want to change the numbers it produces.
 
-The financial **numbers** now come from SEC's standardized XBRL `companyfacts` data (`facts.py`), so they work for any filer. The **narrative** still comes from the filing document. The Apple-tuned regex extractors in `text_metrics.py` are only for tests.
+The financial **numbers** now come from SEC's standardized XBRL `companyfacts` data (`facts.py`), so they work for any filer. The **narrative** still comes from the filing document.
 
 ---
 
@@ -57,7 +57,7 @@ result dict  →  JSON
 
 **`text_metrics.extract_qualitative(sections)`** — keyword/pattern scan of the MD&A, risk, and business text: macro risks, risk themes, segment & product revenue, employee count, fiscal year-end. (Note: the segment/product patterns are still heuristic and somewhat company-specific — XBRL segment data is the eventual upgrade.)
 
-### Modules kept for tests / future use
+### Modules kept for future use
 
 - **`facts.get_fact(facts, field)` / `CONCEPT_MAP` / `EXTENSION_OVERRIDES`** — single-field lookup with company-extension fallback (handy for one-off fields like `product_revenue`).
 - **`sections.get_narrative(cik)`** — fetch a filing and return just the prose sections.
@@ -115,18 +115,20 @@ result dict  →  JSON
 #### Example with AAPL
 
 ```bash
-# 1) CLI — runs the full pipeline live against SEC and saves JSON
-python -m backend.data_extract.extractor AAPL 10-K
-#    -> writes AAPL_10K.json and prints a per-category field count
 
-# 2) API — serve it and hit the endpoint
+#### NOTE: Needs python 3.10+ to run
+
+##### 1) CLI — runs the full pipeline live against SEC and saves JSON
+python -m backend.data_extract.extractor AAPL 10-K
+#####    -> writes AAPL_10K.json and prints a per-category field count
+
+##### 2) API — serve it and hit the endpoint
 uvicorn backend.data_extract.app:app --reload --port 8000
 curl http://localhost:8000/extract/AAPL          # JSON response
-#    open http://localhost:8000/docs for the interactive Swagger UI
 
-# 3) Saving the data
-curl.exe http://localhost:8000/extract/AAPL -o MSFT.json
-# or
+##### 3) Saving the data
+curl.exe http://localhost:8000/extract/AAPL -o AAPL.json
+##### or
 Invoke-RestMethod http://localhost:8000/extract/AAPL | ConvertTo-Json -Depth 10 | Out-File MSFT.json
 ```
 
@@ -197,4 +199,4 @@ if ca and cl and cl != 0:
 > Tip: the field-name → us-gaap concept mapping is the heart of `facts.py`. To find the right concept for a line item, look it up in a company's `companyfacts` JSON
 > (`https://data.sec.gov/api/xbrl/companyfacts/CIK##########.json`) under `facts → us-gaap`.
 
-After any change, re-run the suite: `pytest tests/backend_tests/data_extract_unit_tests.py -v`.
+After any change, re-run the suite: `pytest tests/backend_tests/run_tests.py -v`.
